@@ -325,7 +325,7 @@ const DropDownTerminal = new Lang.Class({
 
         // FIXME: we get weird colors when we apply tango colors
         //
-        // terminal.set_colors(ForegroundColor, BackgroundColor, TangoPalette, TangoPalette.length);
+        terminal.set_colors(ForegroundColor, BackgroundColor, TangoPalette, TangoPalette.length);
 
         return terminal;
     },
