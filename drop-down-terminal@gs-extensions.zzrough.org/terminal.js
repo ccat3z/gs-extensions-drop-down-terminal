@@ -88,24 +88,8 @@ const FOCUS_MODE_SLOPPY = "sloppy";
 const ForegroundColor = Convenience.parseRgbaColor("#aaaaaaaaaaaa");
 const BackgroundColor = Convenience.parseRgbaColor("#000000000000");
 
-const TangoPalette = [
-    Convenience.parseRgbaColor("#000000000000"),
-    Convenience.parseRgbaColor("#cccc00000000"),
-    Convenience.parseRgbaColor("#4e4e9a9a0606"),
-    Convenience.parseRgbaColor("#c4c4a0a00000"),
-    Convenience.parseRgbaColor("#34346565a4a4"),
-    Convenience.parseRgbaColor("#757550507b7b"),
-    Convenience.parseRgbaColor("#060698209a9a"),
-    Convenience.parseRgbaColor("#d3d3d7d7cfcf"),
-    Convenience.parseRgbaColor("#555557575353"),
-    Convenience.parseRgbaColor("#efef29292929"),
-    Convenience.parseRgbaColor("#8a8ae2e23434"),
-    Convenience.parseRgbaColor("#fcfce9e94f4f"),
-    Convenience.parseRgbaColor("#72729f9fcfcf"),
-    Convenience.parseRgbaColor("#adad7f7fa8a8"),
-    Convenience.parseRgbaColor("#3434e2e2e2e2"),
-    Convenience.parseRgbaColor("#eeeeeeeeecec")
-];
+const Palette = ['#2d2d2d', '#f2777a', '#99cc99', '#ffcc66', '#6699cc', '#cc99cc', '#66cccc', '#d3d0c8', '#747369', '#f2777a', '#99cc99', '#ffcc66', '#6699cc', '#cc99cc', '#66cccc', '#f2f0ec']
+    .map(Convenience.parseRgbaColor);
 
 const UserCharsPattern = "-[:alnum:]";
 const UserCharsClassPattern = "[" + UserCharsPattern + "]";
@@ -325,7 +309,7 @@ const DropDownTerminal = new Lang.Class({
 
         // FIXME: we get weird colors when we apply tango colors
         //
-        terminal.set_colors(ForegroundColor, BackgroundColor, TangoPalette, TangoPalette.length);
+        terminal.set_colors(ForegroundColor, BackgroundColor, Palette, Palette.length);
 
         return terminal;
     },
