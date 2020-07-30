@@ -120,6 +120,9 @@ const UriHandlingProperties = [
     { pattern: "(?:news:|man:|info:)[[:alnum:]\\Q^_{|}~!\"#$%&'()*+,./;:=?`\\E]+", flavor: UriFlavor.AsIs }
 ];
 
+// config gdk
+Gdk.set_allowed_backends('x11,*')
+
 
 // terminal class
 const DropDownTerminal = new Lang.Class({
