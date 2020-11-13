@@ -469,7 +469,7 @@ const DropDownTerminal = new Lang.Class({
         }
 
         // parses the command line
-        this._customCommandArgs = command ? command.split(/\s+/) : [];
+        this._customCommandArgs = command ? ['sh', '-c', command] : [];
 
         // tries to fork the shell again if it fails last time (the user might be trying different values,
         // we do not want the terminal to get stuck)
