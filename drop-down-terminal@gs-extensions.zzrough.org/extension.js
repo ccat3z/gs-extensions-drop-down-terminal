@@ -539,7 +539,11 @@ const DropDownTerminalExtension = new Lang.Class({
 
         // applies the change dynamically if the terminal is already spawn
         if (this._busProxy !== null && this._windowHeight !== null) {
-            this._busProxy.SetGeometryRemote(this._windowX, this._windowY, this._windowWidth, this._windowHeight);
+            if (scaleFactor === 2) {
+                this._busProxy.SetGeometryRemote(this._windowX, this._windowY / 2, this._windowWidth, this._windowHeight);
+            } else {
+                this._busProxy.SetGeometryRemote(this._windowX, this._windowY, this._windowWidth, this._windowHeight);
+            }
         } else if (this._windowActor != null) {
             this._windowActor.set_position(this._windowX, this._windowY);
         }
