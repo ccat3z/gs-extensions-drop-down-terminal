@@ -79,17 +79,12 @@ const ENABLE_AUDIBLE_BELL_KEY = "enable-audible-bell";
 
 // gnome desktop wm settings
 const WM_PREFERENCES_SCHEMA = "org.gnome.desktop.wm.preferences";
+const GNOME_TERMINAL_PROFILE_SCHEMA = "org.gnome.Terminal.Legacy.Profile";
+const GNOME_TERMINAL_PROFILES_SCHEMA = "org.gnome.Terminal.ProfilesList";
 const WM_FOCUS_MODE_SETTING_KEY = "focus-mode";
 const FOCUS_MODE_CLICK = "click";
 const FOCUS_MODE_MOUSE = "mouse";
 const FOCUS_MODE_SLOPPY = "sloppy";
-
-// constants borrowed from gnome-terminal
-const ForegroundColor = Convenience.parseRgbaColor("#aaaaaaaaaaaa");
-const BackgroundColor = Convenience.parseRgbaColor("#000000000000");
-
-const Palette = ['#2d2d2d', '#f2777a', '#99cc99', '#ffcc66', '#6699cc', '#cc99cc', '#66cccc', '#d3d0c8', '#747369', '#f2777a', '#99cc99', '#ffcc66', '#6699cc', '#cc99cc', '#66cccc', '#f2f0ec']
-    .map(Convenience.parseRgbaColor);
 
 const UserCharsPattern = "-[:alnum:]";
 const UserCharsClassPattern = "[" + UserCharsPattern + "]";
@@ -122,7 +117,6 @@ const UriHandlingProperties = [
 
 // config gdk
 Gdk.set_allowed_backends('x11,*')
-
 
 // terminal class
 const DropDownTerminal = new Lang.Class({
@@ -201,7 +195,13 @@ const DropDownTerminal = new Lang.Class({
             this._desktopSettings.connect("changed::" + WM_FOCUS_MODE_SETTING_KEY, Lang.bind(this, this._updateFocusMode));
         }
 
+        this._gnomeTerminalProfilesList = Convenience.getInstalledSettings(GNOME_TERMINAL_PROFILES_SCHEMA);
+        if (this._gnomeTerminalProfilesList != null) {
+            this._gnomeTerminalProfilesList.connect("changed::default", Lang.bind(this, this._updateGnomeTerminalProfile));
+        }
+
         // applies the settings initially
+        this._updateGnomeTerminalProfile();
         this._updateFont();
         this._updateOpacityAndColors();
         this._updateAudibleIndicator();
@@ -309,10 +309,6 @@ const DropDownTerminal = new Lang.Class({
         terminal.connect("button-release-event", Lang.bind(this, this._terminalButtonReleased));
         terminal.connect("button-press-event", Lang.bind(this, this._terminalButtonPressed));
         terminal.connect("refresh-window", Lang.bind(this, this._refreshWindow));
-
-        // FIXME: we get weird colors when we apply tango colors
-        //
-        terminal.set_colors(ForegroundColor, BackgroundColor, Palette, Palette.length);
 
         return terminal;
     },
@@ -426,28 +422,15 @@ const DropDownTerminal = new Lang.Class({
         let hasScrollbar = this._settings.get_boolean(SCROLLBAR_VISIBLE_SETTING_KEY);
 
         // updates the colors
-        //
-        // Note: to follow the deprecation scheme, we try first the _rgba variants as vte < 0.38
-        //       already has the non-rgba-suffixed one but it was working with GdkColor back then,
-        //       and passing a GdkRGBA would raise an exception
-        let fgColor = Convenience.parseRgbaColor(this._settings.get_string(COLOR_FOREGROUND_SETTING_KEY));
-        let bgColor = Convenience.parseRgbaColor(this._settings.get_string(COLOR_BACKGROUND_SETTING_KEY));
+        // 
 
-        if (this._terminal.set_color_foreground_rgba) { // removed in vte 0.38
-            this._terminal.set_color_foreground_rgba(fgColor);
-        } else {
-            this._terminal.set_color_foreground(fgColor);
-        }
-
-        // Note: by applying the transparency only to the background colour of the terminal, the text stays
-        //       readable in any case
+        let fgColor = Convenience.parseRgbaColor(this._currentGnomeTerminalProfile.get_string('foreground-color'));
+        let bgColor = Convenience.parseRgbaColor(this._currentGnomeTerminalProfile.get_string('background-color'));
         bgColor.alpha = isTransparent ? transparencyLevel : bgColor.alpha;
 
-        if (this._terminal.set_color_background_rgba) { // removed in vte 0.38
-            this._terminal.set_color_background_rgba(bgColor);
-        } else {
-            this._terminal.set_color_background(bgColor);
-        }
+        let palette = this._currentGnomeTerminalProfile.get_strv('palette').map(Convenience.parseRgbaColor);
+
+        this._terminal.set_colors(fgColor, bgColor, palette)
 
         this._terminalSw.set_policy(Gtk.PolicyType.AUTOMATIC,
                                     hasScrollbar ? Gtk.PolicyType.ALWAYS : Gtk.PolicyType.NEVER);
@@ -481,6 +464,29 @@ const DropDownTerminal = new Lang.Class({
     _updateFocusMode: function() {
         this._focusMode = this._desktopSettings ? this._desktopSettings.get_string(WM_FOCUS_MODE_SETTING_KEY)
                                                 : FOCUS_MODE_CLICK;
+    },
+
+    _updateGnomeTerminalProfile: function() {
+        let profiles = this._gnomeTerminalProfilesList;
+        let profilePath = profiles.settings_schema.get_path();
+        let uuid = profiles.get_string('default');
+
+        log(`Switch profile ${uuid}`)
+
+        // disconnect old profile
+        if (this._currentGnomeTerminalProfileSignal !== undefined) {
+            this._currentGnomeTerminalProfile.disconnect(
+                this._currentGnomeTerminalProfileSignal
+            );
+        }
+
+        // setup new profile
+        this._currentGnomeTerminalProfile = Gio.Settings.new_with_path(
+            GNOME_TERMINAL_PROFILE_SCHEMA,
+            `${profilePath}:${uuid}/`
+        );
+        this._currentGnomeTerminalProfileSignal = this._currentGnomeTerminalProfile.connect('change-event', Lang.bind(this, this._updateOpacityAndColors));
+        this._updateOpacityAndColors();
     },
 
     _windowMouseEnter: function(window, event) {
