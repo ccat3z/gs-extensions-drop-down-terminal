@@ -19,6 +19,10 @@ const Lang = imports.lang;
 const Gettext = imports.gettext.domain("drop-down-terminal");
 const Mainloop = imports.mainloop;
 
+imports.gi.versions.Gdk = "3.0";
+imports.gi.versions.GdkX11 = "3.0";
+imports.gi.versions.Gtk = "3.0";
+
 const Clutter = imports.gi.Clutter;
 const Cogl = imports.gi.Cogl;
 const Gdk = imports.gi.Gdk;
@@ -102,50 +106,6 @@ function debug(text) { DEBUG && log("[DDT] " + text); }
 if (window.__DDTInstance === undefined) {
     window.__DDTInstance = 1;
 }
-
-const SouthBorderEffect = new Lang.Class({
-    Name: "SouthBorderEffect-" + window.__DDTInstance++,
-    Extends: Clutter.Effect,
-
-    _init: function() {
-        this.parent();
-
-        this._color = new Cogl.Color();
-
-        if (Convenience.GTK_VERSION >= 31590) {
-             this._color.init_from_4ub(0x1c, 0x1f, 0x1f, 0xff);
-             this._width = 1;
-        } else {
-             this._color.init_from_4ub(0xa5, 0xa5, 0xa5, 0xff);
-             this._width = 2;
-        }
-    },
-
-    vfunc_paint: function(paintContext) {
-        let actor = this.get_actor();
-
-        if (paintContext.get_framebuffer) {
-            let alloc = actor.get_allocation_box();
-
-            actor.continue_paint(paintContext);
-
-            let framebuffer = paintContext.get_framebuffer();
-            let coglContext = framebuffer.get_context();
-
-            let pipeline = new Cogl.Pipeline(coglContext);
-            pipeline.set_color(this._color)
-            framebuffer.draw_rectangle(pipeline, 0, alloc.get_height(), alloc.get_width(), alloc.get_height() - this._width)
-        } else {
-            let alloc = actor.get_allocation_box();
-
-            actor.continue_paint(paintContext);
-
-            Cogl.set_source_color(this._color);
-            Cogl.rectangle(0, alloc.get_height(), alloc.get_width(), alloc.get_height() - this._width);
-        }
-    },
-});
-
 
 // missing dependencies dialog
 const MissingVteDialog = new Lang.Class({
@@ -793,7 +753,6 @@ const DropDownTerminalExtension = new Lang.Class({
     _setWindowActor: function(actor) {
         // adds a gray border on south of the actor to mimick the shell borders
         actor.clear_effects();
-        actor.add_effect(new SouthBorderEffect());
 
         // sets a distinctive name for the actor
         actor.set_name(TERMINAL_WINDOW_ACTOR_NAME);
